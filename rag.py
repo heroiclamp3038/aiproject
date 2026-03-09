@@ -11,12 +11,11 @@ def embed_text(text: str):
 
 def index_book(book):
     text = f"""
-    Title: {book['title']}
-    Author: {book['author']}
-    Language: {book['language']}
-    Category: {book['category']}
-    Shelf: {book['shelf_location']}
-    Description: {book['description']}
+    Title: {book['Title']}
+    Author: {book['Author']}
+    Language: {book['Language']}
+    Category: {book['Category']}
+    Shelf: {book['Shelf Location']}
     """
     emb = embed_text(text)
 
