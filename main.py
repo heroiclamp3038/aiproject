@@ -3,8 +3,17 @@ from sheets import get_all_books, get_book, update_book
 from rag import search_books, index_book
 import ollama
 from datetime import datetime, timedelta
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Allow requests from Vite dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -51,16 +60,18 @@ def chat(query: str):
         context += f"{book['Title']} by {book['Author']} (Shelf {book['Shelf Location']})\n"
 
     prompt = f"""
-    You are a library assistant. Use the context to answer the question.
+You are a helpful library assistant. Use the provided book information to answer the user's question accurately and helpfully. If the question isn't about books, politely explain that you can only assist with library-related queries.
 
-    Context:
-    {context}
+Book Context:
+{context}
 
-    Question: {query}
-    """
+User Question: {query}
+
+Please provide a clear, concise answer based on the available books.
+"""
 
     response = ollama.chat(
-        model="llama3.1:8b",  # Or your preferred chat model
+        model="llama3.2",  # Change to an available model like llama3.2, mistral, etc.
         messages=[{"role": "user", "content": prompt}]
     )
 
