@@ -5,8 +5,8 @@ import Chatbot from "./pages/chatbot";
 
 function Navbar() {
   return (
-    <nav className="bg-gray-900 px-6 py-4 flex justify-between items-center shadow">
-      <a href="/" className="text-xl font-bold text-white">Library</a>
+    <nav className="bg-gray-900 px-16 py-4 flex justify-between items-center shadow-md border-b border-gray-800">
+      <a href="/" className="text-xl font-bold text-white">Fremont Khalsa School Library</a>
 
       <div className="flex gap-6">
         <a href="/" className="text-gray-300 hover:text-white">Catalog</a>
