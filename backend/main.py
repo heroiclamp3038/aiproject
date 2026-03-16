@@ -32,7 +32,7 @@ async def startup_event():
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the AI Library API"}
+    return {"message": "Welcome to the FKS AI Library!"}
 
 @app.get("/books")
 def list_books():
