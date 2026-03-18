@@ -1,8 +1,12 @@
 import os
 from google import genai
+from google.genai import types
 from backend.vector_store import collection
 
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+client = genai.Client(
+    api_key=os.environ["GEMINI_API_KEY"],
+    http_options=types.HttpOptions(api_version="v1")
+)
 
 
 def embed_text(text: str):
