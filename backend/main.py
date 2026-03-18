@@ -66,12 +66,12 @@ async def chat(request: Request):
         return {"response": "Please ask me something about the library!"}
 
     try:
-        books = get_all_books()
         results = search_books(query)
+        books = results.get("metadatas", [[]])[0]
 
-        if len(results) > 0:
+        if books:
             context = "Here are some relevant books:\n"
-            for book in results[:5]:
+            for book in books[:5]:
                 context += f"• {book['title']} by {book['author']}\n"
         else:
             context = "No books found matching your search."

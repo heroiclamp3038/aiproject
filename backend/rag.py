@@ -3,7 +3,7 @@ from backend.vector_store import collection
 
 def embed_text(text: str):
     result = ollama.embeddings(
-        model="nomic-embed-text",
+        model="nomic-embed-text:latest",
         prompt=text
     )
     return result["embedding"]
