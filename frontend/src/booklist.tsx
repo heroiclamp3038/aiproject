@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
+import { fetchBooks } from "./api.js";
 
 function BookList() {
   const [books, setBooks] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8000/books")
-      .then(res => res.json())
-      .then(data => {
-        // backend normalizes keys to lowercase
+    fetchBooks()
+      .then((data: any[]) => {
         const validBooks = data.filter((b: any) => b.title && b.title.trim());
         setBooks(validBooks);
       })
-      .catch(err => console.error("FETCH ERROR:", err));
+      .catch((err: any) => console.error("FETCH ERROR:", err));
   }, []);
 
   const filteredBooks = books.filter(book =>
