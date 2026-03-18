@@ -1,17 +1,13 @@
 import os
 from google import genai
-from google.genai import types
 from backend.vector_store import collection
 
-client = genai.Client(
-    api_key=os.environ["GEMINI_API_KEY"],
-    http_options=types.HttpOptions(api_version="v1")
-)
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
 def embed_text(text: str):
     result = client.models.embed_content(
-        model="text-embedding-004",
+        model="gemini-embedding-exp-03-07",
         contents=text
     )
     return result.embeddings[0].values

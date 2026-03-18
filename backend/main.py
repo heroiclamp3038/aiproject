@@ -1,17 +1,13 @@
 import os
 from contextlib import asynccontextmanager
 from google import genai
-from google.genai import types
 from fastapi import FastAPI, Request
 from backend.sheets import get_all_books, get_book, update_book
 from backend.rag import search_books, index_book
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 
-gemini = genai.Client(
-    api_key=os.environ["GEMINI_API_KEY"],
-    http_options=types.HttpOptions(api_version="v1")
-)
+gemini = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
