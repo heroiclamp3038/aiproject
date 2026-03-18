@@ -4,4 +4,4 @@ providers = ["python"]
 nixPkgs = ["python3", "python312Packages.pip", "gcc"]
 
 [phases.install]
-cmds = ["pip install -r backend/requirements.txt"]
+cmds = ["pip install --break-system-packages -r backend/requirements.txt"]
