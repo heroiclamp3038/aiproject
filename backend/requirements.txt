@@ -4,4 +4,4 @@ gspread
 oauth2client
 chromadb
 requests
-google-generativeai
+google-genai

@@ -1,13 +1,13 @@
 import os
 from contextlib import asynccontextmanager
-import google.generativeai as genai
+from google import genai
 from fastapi import FastAPI, Request
 from backend.sheets import get_all_books, get_book, update_book
 from backend.rag import search_books, index_book
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+gemini = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -92,8 +92,10 @@ User Question: {query}
 
 Provide a clear, concise answer."""
 
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        response = model.generate_content(prompt)
+        response = gemini.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
 
         return {"response": response.text}
 

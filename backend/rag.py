@@ -1,16 +1,16 @@
 import os
-import google.generativeai as genai
+from google import genai
 from backend.vector_store import collection
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
 def embed_text(text: str):
-    result = genai.embed_content(
-        model="models/text-embedding-004",
-        content=text
+    result = client.models.embed_content(
+        model="text-embedding-004",
+        contents=text
     )
-    return result["embedding"]
+    return result.embeddings[0].values
 
 
 def index_book(book):
