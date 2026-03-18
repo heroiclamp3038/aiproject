@@ -1,4 +1,7 @@
 providers = ["python"]
 
+[phases.setup]
+nixPkgs = ["python3", "python312Packages.pip", "gcc"]
+
 [phases.install]
-cmds = ["python3 -m pip install -r backend/requirements.txt"]
+cmds = ["pip install -r backend/requirements.txt"]
