@@ -1,34 +1,37 @@
+import os
+from contextlib import asynccontextmanager
+import google.generativeai as genai
 from fastapi import FastAPI, Request
 from backend.sheets import get_all_books, get_book, update_book
 from backend.rag import search_books, index_book
-import ollama
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     try:
         print("Starting book indexing...")
         books = get_all_books()
         print(f"Found {len(books)} books")
-
-        # Build embeddings list
-        global EMBEDDINGS
-        EMBEDDINGS = [index_book(book) for book in books]
-
+        for book in books:
+            index_book(book)
         print("Book indexing complete")
     except Exception as e:
         print(f"Error during startup indexing: {e}")
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+allowed_origins = os.environ.get("FRONTEND_URL", "*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[allowed_origins] if allowed_origins != "*" else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
@@ -80,24 +83,20 @@ async def chat(request: Request):
         context = "Unable to search the book collection right now."
 
     try:
-        prompt = f"""
-You are a helpful library assistant.
+        prompt = f"""You are a helpful library assistant for Fremont Khalsa School.
 
 Book Context:
 {context}
 
 User Question: {query}
 
-Provide a clear, concise answer.
-"""
+Provide a clear, concise answer."""
 
-        response = ollama.chat(
-            model="llama3.1:8b",
-            messages=[{"role": "user", "content": prompt}]
-        )
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(prompt)
 
-        return {"response": response["message"]["content"]}
+        return {"response": response.text}
 
     except Exception as e:
-        print(f"Ollama error: {e}")
+        print(f"Gemini error: {e}")
         return {"response": context}

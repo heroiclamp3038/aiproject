@@ -1,3 +1,5 @@
+import json
+import os
 import time
 import gspread
 from gspread.exceptions import APIError
@@ -10,9 +12,15 @@ scope = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "service_account.json", scope
-)
+_creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+if _creds_json:
+    _creds_dict = json.loads(_creds_json)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(_creds_dict, scope)
+else:
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "service_account.json", scope
+    )
+
 client = gspread.authorize(creds)
 
 _cached_sheet = None

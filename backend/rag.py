@@ -1,10 +1,14 @@
-import ollama
+import os
+import google.generativeai as genai
 from backend.vector_store import collection
 
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+
 def embed_text(text: str):
-    result = ollama.embeddings(
-        model="nomic-embed-text:latest",
-        prompt=text
+    result = genai.embed_content(
+        model="models/text-embedding-004",
+        content=text
     )
     return result["embedding"]
 
