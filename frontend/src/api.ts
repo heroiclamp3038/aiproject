@@ -5,7 +5,7 @@ export async function fetchBooks() {
   return res.json();
 }
 
-export async function holdBook(bookId, userId) {
+export async function holdBook(bookId: number, userId: number) {
   const res = await fetch(`${API_URL}/hold/${bookId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -14,7 +14,7 @@ export async function holdBook(bookId, userId) {
   return res.json();
 }
 
-export async function chatWithBot(query) {
+export async function chatWithBot(query: string) {
   const res = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
