@@ -18,7 +18,10 @@ class handler(BaseHTTPRequestHandler):
                 self._json(200, {"response": "Please ask me something about the library!"})
                 return
 
-            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
+            client = genai.Client(
+                api_key=os.environ.get("GEMINI_API_KEY", ""),
+                http_options={"api_version": "v1"}
+            )
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
