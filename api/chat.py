@@ -35,6 +35,16 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             api_key = os.environ.get("GEMINI_API_KEY", "")
+
+            # TEMP: list available models
+            list_url = f"https://generativelanguage.googleapis.com/v1/models?key={api_key}"
+            list_req = urllib.request.Request(list_url, method="GET")
+            with urllib.request.urlopen(list_req, timeout=10) as r:
+                models_data = json.loads(r.read())
+            model_names = [m["name"] for m in models_data.get("models", [])]
+            self._json(200, {"response": f"DEBUG models: {model_names}"})
+            return
+
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
