@@ -53,9 +53,10 @@ Answer based on the catalog above. Be clear and concise."""
             text = call_gemini(api_key, prompt)
             self._json(200, {"response": text})
 
+        except urllib.error.HTTPError as e:
+            self._json(500, {"response": f"DEBUG HTTPError {e.code}: {e.read().decode()}"})
         except Exception as e:
-            print(f"Chat error: {type(e).__name__}: {e}")
-            self._json(500, {"response": "Sorry, I'm having trouble answering right now. Please try again."})
+            self._json(500, {"response": f"DEBUG {type(e).__name__}: {e}"})
 
     def _json(self, status, data):
         body = json.dumps(data).encode()
