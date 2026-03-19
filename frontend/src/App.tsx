@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import BookList from "./booklist";
 import BookDetails from "./pages/bookdetails";
 import Chatbot from "./pages/chatbot";
@@ -25,6 +26,7 @@ function App() {
         <Route path="/book/:id" element={<BookDetails />} />
         <Route path="/chat" element={<Chatbot />} />
       </Routes>
+      <SpeedInsights />
     </>
   );
 }
