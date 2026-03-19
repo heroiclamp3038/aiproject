@@ -4,10 +4,10 @@ export async function fetchBooks() {
 }
 
 export async function holdBook(bookId: number, userId: number) {
-  const res = await fetch(`/api/hold/${bookId}`, {
+  const res = await fetch("/api/hold", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId })
+    body: JSON.stringify({ book_id: bookId, user_id: userId })
   });
   return res.json();
 }
