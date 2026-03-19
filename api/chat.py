@@ -2,9 +2,25 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 import sys
+import urllib.request
+import urllib.error
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sheets import get_all_books
-from google import genai
+
+
+def call_gemini(api_key: str, prompt: str) -> str:
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}]
+    }).encode()
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        result = json.loads(resp.read())
+    return result["candidates"][0]["content"]["parts"][0]["text"]
 
 
 class handler(BaseHTTPRequestHandler):
@@ -18,10 +34,7 @@ class handler(BaseHTTPRequestHandler):
                 self._json(200, {"response": "Please ask me something about the library!"})
                 return
 
-            client = genai.Client(
-                api_key=os.environ.get("GEMINI_API_KEY", ""),
-                http_options={"api_version": "v1"}
-            )
+            api_key = os.environ.get("GEMINI_API_KEY", "")
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
@@ -37,12 +50,12 @@ User Question: {query}
 
 Answer based on the catalog above. Be clear and concise."""
 
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=prompt
-            )
-            self._json(200, {"response": response.text})
+            text = call_gemini(api_key, prompt)
+            self._json(200, {"response": text})
 
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()
+            self._json(500, {"response": f"DEBUG – HTTPError {e.code}: {body}"})
         except Exception as e:
             self._json(500, {"response": f"DEBUG – {type(e).__name__}: {e}"})
 
