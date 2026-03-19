@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { chatWithBot } from "../api.js";
+import { chatWithBot } from "../api";
 
 function Chatbot() {
   const [messages, setMessages] = useState<any[]>([]);

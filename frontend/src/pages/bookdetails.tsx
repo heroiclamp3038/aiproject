@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { fetchBooks, holdBook } from "../api.js";
+import { fetchBooks, holdBook } from "../api";
 
 function BookDetails() {
   const { id } = useParams();

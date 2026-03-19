@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchBooks } from "./api.js";
+import { fetchBooks } from "./api";
 
 function BookList() {
   const [books, setBooks] = useState<any[]>([]);
