@@ -50,17 +50,17 @@ function BookDetails() {
           Status:{" "}
           <span className={
             "inline-block px-2 py-1 rounded-full text-sm font-medium " +
-            ((book.status === "available" || !book.status)
+            ((book.status?.toLowerCase() === "available" || !book.status)
               ? "bg-green-900 text-green-300"
-              : book.status === "on_hold"
+              : book.status?.toLowerCase() === "on_hold"
               ? "bg-yellow-900 text-yellow-300"
               : "bg-red-900 text-red-300")
           }>
-            {book.status || "available"}
+            {book.status || "Available"}
           </span>
         </p>
 
-        {(book.status === "available" || !book.status) && (
+        {(book.status?.toLowerCase() === "available" || !book.status) && (
           <div className="space-y-3">
             <input
               type="number"
