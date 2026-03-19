@@ -1,29 +1,69 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { fetchBooks, holdBook } from "../api";
+import { fetchBooks, holdBook, checkoutBook, returnBook, cancelHold } from "../api";
 
 function BookDetails() {
   const { id } = useParams();
   const [book, setBook] = useState<any>(null);
   const [userId, setUserId] = useState("");
-  const [holdResult, setHoldResult] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageOk, setMessageOk] = useState(true);
 
   useEffect(() => {
     fetchBooks()
       .then((all: any[]) => setBook(all.find((b: any) => b.book_id == id)));
   }, [id]);
 
-  async function hold() {
-    if (!userId.trim()) {
-      setHoldResult("Please enter your user ID.");
-      return;
-    }
+  function showMsg(text: string, ok: boolean) {
+    setMessage(text);
+    setMessageOk(ok);
+  }
+
+  function updateBookStatus(status: string) {
+    setBook((prev: any) => ({ ...prev, status, holder_user_id: userId }));
+  }
+
+  async function handleHold() {
+    if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
     const data = await holdBook(Number(id), Number(userId));
     if (data.success) {
-      setHoldResult(`Hold placed! Expires: ${new Date(data.hold_until).toLocaleDateString()}`);
-      setBook((prev: any) => ({ ...prev, status: "on_hold" }));
+      showMsg(`Hold placed! Expires: ${new Date(data.hold_until).toLocaleDateString()}`, true);
+      updateBookStatus("on_hold");
     } else {
-      setHoldResult(data.error || "Could not place hold.");
+      showMsg(data.error || "Could not place hold.", false);
+    }
+  }
+
+  async function handleCheckout() {
+    if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
+    const data = await checkoutBook(Number(id), Number(userId));
+    if (data.success) {
+      showMsg(`Checked out! Due: ${new Date(data.due_date).toLocaleDateString()}`, true);
+      updateBookStatus("checked_out");
+    } else {
+      showMsg(data.error || "Could not check out.", false);
+    }
+  }
+
+  async function handleReturn() {
+    if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
+    const data = await returnBook(Number(id), Number(userId));
+    if (data.success) {
+      showMsg("Book returned successfully!", true);
+      updateBookStatus("Available");
+    } else {
+      showMsg(data.error || "Could not return book.", false);
+    }
+  }
+
+  async function handleCancelHold() {
+    if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
+    const data = await cancelHold(Number(id), Number(userId));
+    if (data.success) {
+      showMsg("Hold cancelled successfully!", true);
+      updateBookStatus("Available");
+    } else {
+      showMsg(data.error || "Could not cancel hold.", false);
     }
   }
 
@@ -32,6 +72,24 @@ function BookDetails() {
       <p className="text-white text-lg">Loading...</p>
     </div>
   );
+
+  const status = (book.status || "available").toLowerCase();
+  const isAvailable = status === "available";
+  const isOnHold = status === "on_hold";
+  const isCheckedOut = status === "checked_out";
+
+  const statusLabel =
+    isAvailable ? "Available" :
+    isOnHold ? "On Hold" :
+    isCheckedOut ? "Checked Out" :
+    book.status;
+
+  const statusColor =
+    isAvailable ? "bg-green-900 text-green-300" :
+    isOnHold ? "bg-yellow-900 text-yellow-300" :
+    "bg-red-900 text-red-300";
+
+  const showActions = isAvailable || isOnHold || isCheckedOut;
 
   return (
     <div className="min-h-screen bg-gray-900 py-16">
@@ -48,19 +106,12 @@ function BookDetails() {
 
         <p className="mb-6">
           Status:{" "}
-          <span className={
-            "inline-block px-2 py-1 rounded-full text-sm font-medium " +
-            ((book.status?.toLowerCase() === "available" || !book.status)
-              ? "bg-green-900 text-green-300"
-              : book.status?.toLowerCase() === "on_hold"
-              ? "bg-yellow-900 text-yellow-300"
-              : "bg-red-900 text-red-300")
-          }>
-            {book.status || "Available"}
+          <span className={`inline-block px-2 py-1 rounded-full text-sm font-medium ${statusColor}`}>
+            {statusLabel}
           </span>
         </p>
 
-        {(book.status?.toLowerCase() === "available" || !book.status) && (
+        {showActions && (
           <div className="space-y-3">
             <input
               type="number"
@@ -69,18 +120,47 @@ function BookDetails() {
               onChange={e => setUserId(e.target.value)}
               className="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button
-              onClick={hold}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition-colors"
-            >
-              Place Hold
-            </button>
+
+            {isAvailable && (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleHold}
+                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-semibold transition-colors"
+                >
+                  Place Hold
+                </button>
+                <button
+                  onClick={handleCheckout}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition-colors"
+                >
+                  Checkout
+                </button>
+              </div>
+            )}
+
+            {isOnHold && (
+              <button
+                onClick={handleCancelHold}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition-colors"
+              >
+                Cancel Hold
+              </button>
+            )}
+
+            {isCheckedOut && (
+              <button
+                onClick={handleReturn}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-semibold transition-colors"
+              >
+                Return Book
+              </button>
+            )}
           </div>
         )}
 
-        {holdResult && (
-          <p className="mt-4 text-sm text-gray-300 bg-gray-700 px-4 py-2 rounded-lg">
-            {holdResult}
+        {message && (
+          <p className={`mt-4 text-sm px-4 py-2 rounded-lg ${messageOk ? "text-green-300 bg-green-900/40" : "text-red-300 bg-red-900/40"}`}>
+            {message}
           </p>
         )}
       </div>
