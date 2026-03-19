@@ -49,7 +49,7 @@ function BookList() {
                 {b.title}
               </h2>
 
-              <p className="text-gray-300 mb-3">{b.author}</p>
+              <p className="text-gray-300 mb-3">Author: {b.author}</p>
 
               {b.category && (
                 <p className="text-sm text-gray-400 mb-3">
