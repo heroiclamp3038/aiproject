@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = "https://fks-library-catalog.onrender.com";
 
 export async function fetchBooks() {
   const res = await fetch(`${API_URL}/books`);
