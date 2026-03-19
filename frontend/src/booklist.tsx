@@ -60,9 +60,9 @@ function BookList() {
               <span
                 className={
                   "inline-block px-3 py-1 rounded-full text-sm font-medium " +
-                  (b.status === "available"
+                  (b.status?.toLowerCase() === "available"
                     ? "bg-green-900 text-green-300"
-                    : b.status === "on_hold"
+                    : b.status?.toLowerCase() === "on_hold"
                     ? "bg-yellow-900 text-yellow-300"
                     : "bg-red-900 text-red-300")
                 }

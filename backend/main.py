@@ -1,10 +1,10 @@
 import os
 from contextlib import asynccontextmanager
 from google import genai
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 from backend.sheets import get_all_books, get_book, update_book
 from datetime import datetime, timedelta
-from fastapi.middleware.cors import CORSMiddleware
 
 gemini = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
@@ -14,12 +14,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    if request.method == "OPTIONS":
+        response = Response()
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 @app.get("/")
 def read_root():
@@ -35,7 +42,7 @@ def hold_book(book_id: int, user_id: int):
     if not book:
         return {"error": "Book not found"}
 
-    if book["status"] != "available":
+    if (book["status"] or "").lower() != "available":
         return {"error": "Book not available"}
 
     hold_until = (datetime.now() + timedelta(days=2)).isoformat()
@@ -79,5 +86,5 @@ Answer based on the catalog above. Be clear and concise."""
         return {"response": response.text}
 
     except Exception as e:
-        print(f"Gemini error: {e}")
+        print(f"Gemini error: {type(e).__name__}: {e}")
         return {"response": "Sorry, I'm having trouble answering right now. Please try again."}
