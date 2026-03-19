@@ -9,7 +9,7 @@ from sheets import get_all_books
 
 
 def call_gemini(api_key: str, prompt: str) -> str:
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={api_key}"
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}]
     }).encode()
@@ -35,16 +35,6 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             api_key = os.environ.get("GEMINI_API_KEY", "")
-
-            # TEMP: list available models
-            list_url = f"https://generativelanguage.googleapis.com/v1/models?key={api_key}"
-            list_req = urllib.request.Request(list_url, method="GET")
-            with urllib.request.urlopen(list_req, timeout=10) as r:
-                models_data = json.loads(r.read())
-            model_names = [m["name"] for m in models_data.get("models", [])]
-            self._json(200, {"response": f"DEBUG models: {model_names}"})
-            return
-
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
@@ -63,11 +53,9 @@ Answer based on the catalog above. Be clear and concise."""
             text = call_gemini(api_key, prompt)
             self._json(200, {"response": text})
 
-        except urllib.error.HTTPError as e:
-            body = e.read().decode()
-            self._json(500, {"response": f"DEBUG – HTTPError {e.code}: {body}"})
         except Exception as e:
-            self._json(500, {"response": f"DEBUG – {type(e).__name__}: {e}"})
+            print(f"Chat error: {type(e).__name__}: {e}")
+            self._json(500, {"response": "Sorry, I'm having trouble answering right now. Please try again."})
 
     def _json(self, status, data):
         body = json.dumps(data).encode()
