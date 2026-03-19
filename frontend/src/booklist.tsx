@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { fetchBooks } from "./api";
 
+function formatStatus(status: string | null | undefined): string {
+  const s = (status || "").toLowerCase();
+  if (s === "available" || !s) return "Available";
+  if (s === "on_hold") return "On Hold";
+  if (s === "checked_out") return "Checked Out";
+  return status || "Unknown";
+}
+
 function BookList() {
   const [books, setBooks] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,14 +68,14 @@ function BookList() {
               <span
                 className={
                   "inline-block px-3 py-1 rounded-full text-sm font-medium " +
-                  (b.status?.toLowerCase() === "available"
+                  (b.status?.toLowerCase() === "available" || !b.status
                     ? "bg-green-900 text-green-300"
                     : b.status?.toLowerCase() === "on_hold"
                     ? "bg-yellow-900 text-yellow-300"
                     : "bg-red-900 text-red-300")
                 }
               >
-                {b.status}
+                {formatStatus(b.status)}
               </span>
             </a>
           ))}

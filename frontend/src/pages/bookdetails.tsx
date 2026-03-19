@@ -1,11 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchBooks, holdBook, checkoutBook, returnBook, cancelHold } from "../api";
+import { getUser } from "../App";
 
 function BookDetails() {
   const { id } = useParams();
+  const user = getUser();
   const [book, setBook] = useState<any>(null);
-  const [userId, setUserId] = useState("");
+  const [userId] = useState(user?.userId?.toString() ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [messageOk, setMessageOk] = useState(true);
 
@@ -113,13 +115,6 @@ function BookDetails() {
 
         {showActions && (
           <div className="space-y-3">
-            <input
-              type="number"
-              placeholder="Enter your user ID"
-              value={userId}
-              onChange={e => setUserId(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
 
             {isAvailable && (
               <div className="flex gap-3">
