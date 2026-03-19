@@ -1,42 +1,24 @@
 import os
-from contextlib import asynccontextmanager
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from fastapi import FastAPI, Request
+from mangum import Mangum
 from google import genai
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
-from backend.sheets import get_all_books, get_book, update_book
 from datetime import datetime, timedelta
+from sheets import get_all_books, get_book, update_book
 
-gemini = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+gemini = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield
+app = FastAPI()
 
-app = FastAPI(lifespan=lifespan)
 
-@app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    if request.method == "OPTIONS":
-        response = Response()
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the FKS AI Library!"}
-
-@app.get("/books")
+@app.get("/api/books")
 def list_books():
     return get_all_books()
 
-@app.post("/hold/{book_id}")
+
+@app.post("/api/hold/{book_id}")
 def hold_book(book_id: int, user_id: int):
     book = get_book(book_id)
     if not book:
@@ -55,7 +37,8 @@ def hold_book(book_id: int, user_id: int):
 
     return {"success": True, "hold_until": hold_until}
 
-@app.post("/chat")
+
+@app.post("/api/chat")
 async def chat(request: Request):
     data = await request.json()
     query = data.get("query", "")
@@ -88,3 +71,6 @@ Answer based on the catalog above. Be clear and concise."""
     except Exception as e:
         print(f"Gemini error: {type(e).__name__}: {e}")
         return {"response": "Sorry, I'm having trouble answering right now. Please try again."}
+
+
+handler = Mangum(app, lifespan="off")

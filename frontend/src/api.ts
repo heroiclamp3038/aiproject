@@ -1,12 +1,10 @@
-const API_URL = "https://fks-library-catalog.onrender.com";
-
 export async function fetchBooks() {
-  const res = await fetch(`${API_URL}/books`);
+  const res = await fetch("/api/books");
   return res.json();
 }
 
 export async function holdBook(bookId: number, userId: number) {
-  const res = await fetch(`${API_URL}/hold/${bookId}`, {
+  const res = await fetch(`/api/hold/${bookId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user_id: userId })
@@ -15,7 +13,7 @@ export async function holdBook(bookId: number, userId: number) {
 }
 
 export async function chatWithBot(query: string) {
-  const res = await fetch(`${API_URL}/chat`, {
+  const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query })

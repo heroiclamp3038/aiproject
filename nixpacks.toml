@@ -1,7 +1,0 @@
-providers = ["python"]
-
-[phases.setup]
-nixPkgs = ["python3", "python312Packages.pip", "gcc"]
-
-[phases.install]
-cmds = ["pip install --break-system-packages -r backend/requirements.txt"]
