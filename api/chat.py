@@ -39,11 +39,6 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             api_key = os.environ.get("OPENROUTER_API_KEY", "")
-            if not api_key:
-                self._json(500, {"response": "DEBUG: OPENROUTER_API_KEY is empty/not set"})
-                return
-            self._json(200, {"response": f"DEBUG: key length={len(api_key)}, starts with '{api_key[:6]}'"})
-            return
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
@@ -63,9 +58,11 @@ Answer based on the catalog above. Be clear and concise."""
             self._json(200, {"response": text})
 
         except urllib.error.HTTPError as e:
-            self._json(500, {"response": f"DEBUG HTTPError {e.code}: {e.read().decode()}"})
+            print(f"OpenRouter error {e.code}: {e.read().decode()}")
+            self._json(500, {"response": "Sorry, I'm having trouble answering right now. Please try again."})
         except Exception as e:
-            self._json(500, {"response": f"DEBUG {type(e).__name__}: {e}"})
+            print(f"Chat error: {type(e).__name__}: {e}")
+            self._json(500, {"response": "Sorry, I'm having trouble answering right now. Please try again."})
 
     def _json(self, status, data):
         body = json.dumps(data).encode()

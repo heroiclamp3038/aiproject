@@ -1,31 +1,32 @@
-# FKS AI Library
+# FKS Library Catalog
 
-An AI-powered library management system for Fremont Khalsa School. Browse the book catalog, view book details, place holds, and chat with an AI assistant about the collection.
+An AI-powered library management system for Fremont Khalsa School. Browse the book catalog, view book details, place/cancel holds, checkout and return books, and chat with an AI assistant about the collection.
 
 **Live app:** installable as a mobile app (PWA) on iOS and Android via the deployed URL.
 
 ## Features
 
+- Sign up / sign in with a persistent user ID stored in the browser
 - Browse and search the full book catalog
-- View individual book details and place holds
-- AI chatbot powered by Google Gemini
+- View book details, place holds, checkout, return books, and cancel holds
+- AI chatbot powered by OpenRouter (Gemini 2.0 Flash)
 - Installable as a mobile app on any device (Progressive Web App)
 
 ## Tech Stack
 
-| Layer    | Technology                                    |
-|----------|-----------------------------------------------|
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS, PWA |
-| API      | FastAPI (Python), Vercel Serverless Functions  |
-| Database | Google Sheets (via gspread)                   |
-| AI / LLM | Google Gemini 1.5 Flash                       |
-| Hosting  | Vercel (frontend + backend, all-in-one)        |
+| Layer    | Technology                                        |
+|----------|---------------------------------------------------|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS, PWA     |
+| API      | Python Serverless Functions (Vercel)              |
+| Database | Google Sheets (via gspread)                       |
+| AI / LLM | OpenRouter → Gemini 2.0 Flash                     |
+| Hosting  | Vercel (frontend + API, all-in-one)               |
 
 ---
 
 ## Deployment (Vercel only)
 
-Everything — frontend and backend — is hosted on Vercel.
+Everything — frontend and API — is hosted on Vercel. No separate backend service needed.
 
 ### 1. Import the repo
 
@@ -36,20 +37,18 @@ Everything — frontend and backend — is hosted on Vercel.
 
 ### 2. Set environment variables
 
-In **Vercel → Project → Settings → Environment Variables**, add:
+In **Vercel → Project → Settings → Environment Variables**, add all three for Production, Preview, and Development:
 
 | Variable | Value |
 |---|---|
-| `GEMINI_API_KEY` | Your Gemini API key from [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
-| `GOOGLE_CREDENTIALS_JSON` | The full contents of `service_account.json` as a single-line JSON string |
+| `OPENROUTER_API_KEY` | Your key from [openrouter.ai/keys](https://openrouter.ai/keys) — starts with `sk-or-v1-` |
+| `GOOGLE_CREDENTIALS_JSON` | Full contents of `service_account.json` as a single-line JSON string |
 
 ### 3. Deploy
 
-Click **Deploy**. That's it — no separate backend service needed.
+Click **Deploy**. The app will be live at your Vercel URL.
 
 ### Installing as a mobile app (PWA)
-
-Once deployed:
 
 **Android (Chrome):** Open the site → tap the three-dot menu → "Add to Home screen"
 
@@ -63,7 +62,7 @@ Once deployed:
 
 - Python 3.11+ and pip
 - Node.js 18+ and npm
-- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+- An [OpenRouter API key](https://openrouter.ai/keys)
 - A Google Cloud service account with access to the library spreadsheet
 
 ### Google Sheets Setup
@@ -78,7 +77,7 @@ Sheet columns required:
 | book_id | Title | Author | Language | Category | Shelf Location | status | holder_user_id | hold_until |
 |---------|-------|--------|----------|----------|----------------|--------|----------------|------------|
 
-### Backend (API) setup
+### API setup
 
 ```bash
 pip install -r api/requirements.txt
@@ -87,17 +86,9 @@ pip install -r api/requirements.txt
 Create a `.env` file in the project root:
 
 ```
-GEMINI_API_KEY=your_key_here
-# For local dev, GOOGLE_CREDENTIALS_JSON can be omitted — falls back to service_account.json
+OPENROUTER_API_KEY=sk-or-v1-...
+# GOOGLE_CREDENTIALS_JSON can be omitted locally — falls back to service_account.json
 ```
-
-Start the backend locally:
-
-```bash
-uvicorn api.index:app --reload
-```
-
-API available at `http://localhost:8000`.
 
 ### Frontend setup
 
@@ -109,17 +100,22 @@ npm run dev
 
 Frontend available at `http://localhost:5173`.
 
-> During local dev, the frontend calls `/api/*` which Vite's dev server won't proxy automatically. Either run both and configure a proxy in `vite.config.ts`, or test against the deployed Vercel URL.
+> During local dev the frontend calls `/api/*` which Vite won't proxy automatically. Test API calls against the deployed Vercel URL, or configure a proxy in `vite.config.ts`.
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint              | Description                        |
-|--------|-----------------------|------------------------------------|
-| GET    | `/api/books`          | Get all books from the catalog     |
-| POST   | `/api/hold/{book_id}` | Place a hold on a book             |
-| POST   | `/api/chat`           | Send a message to the AI assistant |
+| Method | Endpoint          | Description                        |
+|--------|-------------------|------------------------------------|
+| GET    | `/api/books`      | Get all books                      |
+| POST   | `/api/hold`       | Place a hold on a book             |
+| POST   | `/api/checkout`   | Checkout a book                    |
+| POST   | `/api/returnbook` | Return a checked-out book          |
+| POST   | `/api/cancelhold` | Cancel a hold                      |
+| POST   | `/api/chat`       | Send a message to the AI assistant |
+
+All POST endpoints accept JSON with `book_id` and `user_id` fields. `/api/chat` accepts `{ "query": "..." }`.
 
 ---
 
@@ -128,25 +124,31 @@ Frontend available at `http://localhost:5173`.
 ```
 AI Project/
 ├── api/
-│   ├── index.py             # FastAPI app + Mangum serverless handler
-│   ├── sheets.py            # Google Sheets integration
-│   └── requirements.txt     # Python dependencies
+│   ├── books.py         # GET /api/books
+│   ├── chat.py          # POST /api/chat (OpenRouter)
+│   ├── hold.py          # POST /api/hold
+│   ├── checkout.py      # POST /api/checkout
+│   ├── returnbook.py    # POST /api/returnbook
+│   ├── cancelhold.py    # POST /api/cancelhold
+│   ├── sheets.py        # Google Sheets helpers
+│   └── requirements.txt
 ├── frontend/
 │   ├── public/
 │   │   ├── manifest.json    # PWA manifest
-│   │   └── icon.svg         # App icon
+│   │   └── icon.svg
 │   └── src/
-│       ├── App.tsx
-│       ├── api.ts           # Fetch helpers (relative /api/* paths)
-│       ├── booklist.tsx
+│       ├── App.tsx          # Routing + auth guard + navbar
+│       ├── api.ts           # Fetch helpers
+│       ├── booklist.tsx     # Catalog page
 │       └── pages/
+│           ├── login.tsx
 │           ├── bookdetails.tsx
 │           └── chatbot.tsx
-├── vercel.json              # Vercel build + routing config
+├── vercel.json
 └── service_account.json     # NOT committed — local dev only
 ```
 
 ## Notes
 
 - `service_account.json` must never be committed. In production, credentials are passed via `GOOGLE_CREDENTIALS_JSON`.
-- The Gemini API key must be created through [AI Studio](https://aistudio.google.com/app/apikey) to have free tier quota.
+- OpenRouter API keys start with `sk-or-v1-` and are ~73 characters. A shorter key will cause authentication failures.
