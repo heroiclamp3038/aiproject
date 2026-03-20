@@ -39,6 +39,11 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             api_key = os.environ.get("OPENROUTER_API_KEY", "")
+            if not api_key:
+                self._json(500, {"response": "DEBUG: OPENROUTER_API_KEY is empty/not set"})
+                return
+            self._json(200, {"response": f"DEBUG: key length={len(api_key)}, starts with '{api_key[:6]}'"})
+            return
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
