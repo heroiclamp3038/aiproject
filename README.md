@@ -72,10 +72,15 @@ Click **Deploy**. The app will be live at your Vercel URL.
 3. Download the service account JSON key and save it as `service_account.json` in the project root.
 4. Share the Google Sheet named `"AI Project"` with the service account email (Editor access).
 
-Sheet columns required:
+Sheet columns required — **Sheet1** (books):
 
 | book_id | Title | Author | Language | Category | Shelf Location | status | holder_user_id | hold_until |
 |---------|-------|--------|----------|----------|----------------|--------|----------------|------------|
+
+**Users** tab (created automatically on first signup):
+
+| user_id | name | created_at |
+|---------|------|------------|
 
 ### API setup
 

@@ -1,8 +1,10 @@
 import json
 import os
+import random
 import time
+from datetime import datetime
 import gspread
-from gspread.exceptions import APIError
+from gspread.exceptions import APIError, WorksheetNotFound
 from oauth2client.service_account import ServiceAccountCredentials
 
 SHEET_NAME = "AI Project"
@@ -95,3 +97,37 @@ def update_book(book_id: int, updates: dict):
             return True
 
     return False
+
+
+# ── Users sheet ──────────────────────────────────────────────────────────────
+
+def get_users_sheet():
+    spreadsheet = client.open(SHEET_NAME)
+    try:
+        return spreadsheet.worksheet("Users")
+    except WorksheetNotFound:
+        sheet = spreadsheet.add_worksheet(title="Users", rows=1000, cols=4)
+        sheet.append_row(["user_id", "name", "created_at"])
+        return sheet
+
+
+def create_user(name: str) -> dict:
+    sheet = get_users_sheet()
+    existing = sheet.get_all_records()
+    existing_ids = {int(u.get("user_id", 0)) for u in existing}
+
+    user_id = random.randint(100000, 999999)
+    while user_id in existing_ids:
+        user_id = random.randint(100000, 999999)
+
+    sheet.append_row([user_id, name, datetime.utcnow().isoformat()])
+    return {"user_id": user_id, "name": name}
+
+
+def verify_user(user_id: int, name: str) -> dict | None:
+    sheet = get_users_sheet()
+    for user in sheet.get_all_records():
+        if int(user.get("user_id", -1)) == user_id and \
+                user.get("name", "").strip().lower() == name.strip().lower():
+            return {"user_id": user_id, "name": user.get("name")}
+    return None

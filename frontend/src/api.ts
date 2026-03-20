@@ -1,3 +1,25 @@
+export async function signUp(name: string): Promise<{ user_id: number; name: string }> {
+  const res = await fetch("/api/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to create account");
+  return data;
+}
+
+export async function signIn(name: string, userId: number): Promise<{ user_id: number; name: string }> {
+  const res = await fetch("/api/signin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, user_id: userId })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to sign in");
+  return data;
+}
+
 export async function fetchBooks() {
   const res = await fetch("/api/books");
   return res.json();
