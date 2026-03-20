@@ -8,19 +8,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sheets import get_all_books
 
 
-def call_gemini(api_key: str, prompt: str) -> str:
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={api_key}"
+def call_openrouter(api_key: str, prompt: str) -> str:
     payload = json.dumps({
-        "contents": [{"parts": [{"text": prompt}]}]
+        "model": "google/gemini-2.0-flash-exp:free",
+        "messages": [{"role": "user", "content": prompt}]
     }).encode()
     req = urllib.request.Request(
-        url, data=payload,
-        headers={"Content-Type": "application/json"},
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        },
         method="POST"
     )
     with urllib.request.urlopen(req, timeout=25) as resp:
         result = json.loads(resp.read())
-    return result["candidates"][0]["content"]["parts"][0]["text"]
+    return result["choices"][0]["message"]["content"]
 
 
 class handler(BaseHTTPRequestHandler):
@@ -34,7 +38,7 @@ class handler(BaseHTTPRequestHandler):
                 self._json(200, {"response": "Please ask me something about the library!"})
                 return
 
-            api_key = os.environ.get("GEMINI_API_KEY", "")
+            api_key = os.environ.get("OPENROUTER_API_KEY", "")
             books = get_all_books()
             book_list = "\n".join([
                 f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
@@ -50,13 +54,16 @@ User Question: {query}
 
 Answer based on the catalog above. Be clear and concise."""
 
-            text = call_gemini(api_key, prompt)
+            text = call_openrouter(api_key, prompt)
             self._json(200, {"response": text})
 
         except urllib.error.HTTPError as e:
-            self._json(500, {"response": f"DEBUG HTTPError {e.code}: {e.read().decode()}"})
+            err = e.read().decode()
+            print(f"OpenRouter error {e.code}: {err}")
+            self._json(500, {"response": "Sorry, I'm having trouble answering right now. Please try again."})
         except Exception as e:
-            self._json(500, {"response": f"DEBUG {type(e).__name__}: {e}"})
+            print(f"Chat error: {type(e).__name__}: {e}")
+            self._json(500, {"response": "Sorry, I'm having trouble answering right now. Please try again."})
 
     def _json(self, status, data):
         body = json.dumps(data).encode()
