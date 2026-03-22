@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchBooks } from "./api";
+import { getUser } from "./App";
 
 interface BookGroup {
   book_id: number;
@@ -16,6 +17,7 @@ interface BookGroup {
 function BookList() {
   const [books, setBooks] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const user = getUser();
 
   useEffect(() => {
     fetchBooks()
@@ -48,11 +50,14 @@ function BookList() {
     }).length;
     const held = copies.filter(b => (b.status || "").toLowerCase() === "on_hold").length;
     const checkedOut = copies.filter(b => (b.status || "").toLowerCase() === "checked_out").length;
+    const userCopy = user
+      ? copies.find(b => String(b.holder_user_id) === String(user.userId))
+      : undefined;
     const firstAvailable = copies.find(b => {
       const s = (b.status || "").toLowerCase();
       return s === "available" || !s;
     });
-    const linkTo = firstAvailable || copies[0];
+    const linkTo = userCopy || firstAvailable || copies[0];
     return {
       book_id: copies[0].book_id,
       title: copies[0].title,
