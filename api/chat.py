@@ -10,7 +10,7 @@ from sheets import get_all_books
 
 def call_openrouter(api_key: str, prompt: str) -> str:
     payload = json.dumps({
-        "model": "google/gemini-2.0-flash-exp:free",
+        "model": "google/gemini-2.0-flash-lite-001:free",
         "messages": [{"role": "user", "content": prompt}]
     }).encode()
     req = urllib.request.Request(
