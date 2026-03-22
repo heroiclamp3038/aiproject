@@ -8,40 +8,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sheets import get_all_books
 
 
-MODELS = [
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-]
-
-
 def call_openrouter(api_key: str, prompt: str) -> str:
-    last_err = None
-    for model in MODELS:
-        payload = json.dumps({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}]
-        }).encode()
-        req = urllib.request.Request(
-            "https://openrouter.ai/api/v1/chat/completions",
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
-            },
-            method="POST"
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                result = json.loads(resp.read())
-            return result["choices"][0]["message"]["content"]
-        except urllib.error.HTTPError as e:
-            body = e.read().decode()
-            if e.code == 429 or e.code == 404:
-                last_err = f"{e.code}: {body}"
-                continue
-            raise
-    raise Exception(f"All models failed. Last error: {last_err}")
+    payload = json.dumps({
+        "model": "google/gemini-2.0-flash-lite-001",
+        "messages": [{"role": "user", "content": prompt}]
+    }).encode()
+    req = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        result = json.loads(resp.read())
+    return result["choices"][0]["message"]["content"]
 
 
 class handler(BaseHTTPRequestHandler):
