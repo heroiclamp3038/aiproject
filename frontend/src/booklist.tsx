@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { fetchBooks } from "./api";
 
-function formatStatus(status: string | null | undefined): string {
-  const s = (status || "").toLowerCase();
-  if (s === "available" || !s) return "Available";
-  if (s === "on_hold") return "On Hold";
-  if (s === "checked_out") return "Checked Out";
-  return status || "Unknown";
+interface BookGroup {
+  book_id: number;
+  title: string;
+  author: string;
+  category?: string;
+  linkId: number;
+  total: number;
+  available: number;
+  held: number;
+  checkedOut: number;
 }
 
 function BookList() {
@@ -22,11 +26,45 @@ function BookList() {
       .catch((err: any) => console.error("FETCH ERROR:", err));
   }, []);
 
-  const filteredBooks = books.filter(book =>
+  const filtered = books.filter(book =>
     book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Group by title (case-insensitive)
+  const groupMap: Record<string, any[]> = {};
+  for (const book of filtered) {
+    const key = book.title.trim().toLowerCase();
+    if (!groupMap[key]) groupMap[key] = [];
+    groupMap[key].push(book);
+  }
+
+  const titleGroups: BookGroup[] = Object.values(groupMap).map((copies) => {
+    const total = copies.length;
+    const available = copies.filter(b => {
+      const s = (b.status || "").toLowerCase();
+      return s === "available" || !s;
+    }).length;
+    const held = copies.filter(b => (b.status || "").toLowerCase() === "on_hold").length;
+    const checkedOut = copies.filter(b => (b.status || "").toLowerCase() === "checked_out").length;
+    const firstAvailable = copies.find(b => {
+      const s = (b.status || "").toLowerCase();
+      return s === "available" || !s;
+    });
+    const linkTo = firstAvailable || copies[0];
+    return {
+      book_id: copies[0].book_id,
+      title: copies[0].title,
+      author: copies[0].author,
+      category: copies[0].category,
+      linkId: linkTo.book_id,
+      total,
+      available,
+      held,
+      checkedOut,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-gray-900 py-16">
@@ -34,7 +72,7 @@ function BookList() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold text-white">Library Catalog</h1>
           <span className="text-gray-400 text-sm">
-            {filteredBooks.length} books available
+            {titleGroups.length} title{titleGroups.length !== 1 ? "s" : ""}
           </span>
         </div>
 
@@ -47,36 +85,37 @@ function BookList() {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBooks.map((b) => (
+          {titleGroups.map((g) => (
             <a
-              key={b.book_id}
-              href={`/book/${b.book_id}`}
+              key={g.book_id}
+              href={`/book/${g.linkId}`}
               className="bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-xl hover:bg-gray-700 transition-all duration-200 border border-gray-700"
             >
-              <h2 className="text-xl font-semibold text-white mb-1">
-                {b.title}
-              </h2>
-
-              <p className="text-gray-300 mb-3">Author: {b.author}</p>
-
-              {b.category && (
-                <p className="text-sm text-gray-400 mb-3">
-                  Genre: {b.category}
-                </p>
+              <h2 className="text-xl font-semibold text-white mb-1">{g.title}</h2>
+              <p className="text-gray-300 mb-3">Author: {g.author}</p>
+              {g.category && (
+                <p className="text-sm text-gray-400 mb-3">Genre: {g.category}</p>
               )}
 
-              <span
-                className={
-                  "inline-block px-3 py-1 rounded-full text-sm font-medium " +
-                  (b.status?.toLowerCase() === "available" || !b.status
-                    ? "bg-green-900 text-green-300"
-                    : b.status?.toLowerCase() === "on_hold"
-                    ? "bg-yellow-900 text-yellow-300"
-                    : "bg-red-900 text-red-300")
-                }
-              >
-                {formatStatus(b.status)}
-              </span>
+              {/* Copy counts */}
+              <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium">
+                <span className="px-2 py-1 rounded-full bg-gray-700 text-gray-300">
+                  {g.total} {g.total === 1 ? "copy" : "copies"}
+                </span>
+                <span className="px-2 py-1 rounded-full bg-green-900 text-green-300">
+                  {g.available} available
+                </span>
+                {g.held > 0 && (
+                  <span className="px-2 py-1 rounded-full bg-yellow-900 text-yellow-300">
+                    {g.held} on hold
+                  </span>
+                )}
+                {g.checkedOut > 0 && (
+                  <span className="px-2 py-1 rounded-full bg-red-900 text-red-300">
+                    {g.checkedOut} checked out
+                  </span>
+                )}
+              </div>
             </a>
           ))}
         </div>

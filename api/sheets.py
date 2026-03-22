@@ -104,11 +104,18 @@ def update_book(book_id: int, updates: dict):
 def get_users_sheet():
     spreadsheet = client.open(SHEET_NAME)
     try:
-        return spreadsheet.worksheet("Users")
+        sheet = spreadsheet.worksheet("Users")
     except WorksheetNotFound:
         sheet = spreadsheet.add_worksheet(title="Users", rows=1000, cols=4)
         sheet.append_row(["user_id", "name", "created_at"])
         return sheet
+
+    # Insert header row if it's missing (e.g. sheet was created manually)
+    first_row = sheet.row_values(1)
+    if first_row[:3] != ["user_id", "name", "created_at"]:
+        sheet.insert_row(["user_id", "name", "created_at"], 1)
+
+    return sheet
 
 
 def create_user(name: str) -> dict:

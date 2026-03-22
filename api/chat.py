@@ -41,7 +41,7 @@ class handler(BaseHTTPRequestHandler):
             api_key = os.environ.get("OPENROUTER_API_KEY", "")
             books = get_all_books()
             book_list = "\n".join([
-                f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Status: {b['status']}"
+                f"• {b['title']} by {b['author']} | Category: {b['category']} | Language: {b['language']} | Shelf: {b['shelf_location']} | Status: {b['status']}"
                 for b in books if b.get("title")
             ])
 
