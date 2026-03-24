@@ -14,6 +14,7 @@ class handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             book_id = int(body.get("book_id", 0))
             user_id = int(body.get("user_id", 0))
+            email = body.get("email", "").strip()
 
             book = get_book(book_id)
             if not book:
@@ -28,6 +29,7 @@ class handler(BaseHTTPRequestHandler):
             update_book(book_id, {
                 "status": "on_hold",
                 "holder_user_id": user_id,
+                "holder_email": email,
                 "hold_until": hold_until
             })
 

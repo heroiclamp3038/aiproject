@@ -51,7 +51,10 @@ function BookList() {
     const held = copies.filter(b => (b.status || "").toLowerCase() === "on_hold").length;
     const checkedOut = copies.filter(b => (b.status || "").toLowerCase() === "checked_out").length;
     const userCopy = user
-      ? copies.find(b => String(b.holder_user_id) === String(user.userId))
+      ? copies.find(b =>
+          (user.email && b.holder_email === user.email) ||
+          String(b.holder_user_id) === String(user.userId)
+        )
       : undefined;
     const firstAvailable = copies.find(b => {
       const s = (b.status || "").toLowerCase();

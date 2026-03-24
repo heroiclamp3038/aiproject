@@ -1,10 +1,9 @@
 from http.server import BaseHTTPRequestHandler
 import json
-import os
 import sys
-
+import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sheets import create_user
+from sheets import verify_otp
 
 
 class handler(BaseHTTPRequestHandler):
@@ -14,17 +13,17 @@ class handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             name = body.get("name", "").strip()
             email = body.get("email", "").strip().lower()
-            if not name:
-                self._json(400, {"error": "Name is required"})
+            otp = str(body.get("otp", "")).strip()
+            if not name or not email or not otp:
+                self._json(400, {"error": "Name, email, and code are required"})
                 return
-            if not email or "@" not in email:
-                self._json(400, {"error": "Valid email is required"})
+            user = verify_otp(name, email, otp)
+            if not user:
+                self._json(401, {"error": "Invalid or expired recovery code."})
                 return
-            user = create_user(name, email)
             self._json(200, user)
         except Exception as e:
-            print(f"Signup error: {e}")
-            self._json(500, {"error": "Failed to create account. Please try again."})
+            self._json(500, {"error": str(e)})
 
     def _json(self, status, data):
         body = json.dumps(data).encode()

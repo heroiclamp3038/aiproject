@@ -4,7 +4,7 @@ import BookDetails from "./pages/bookdetails";
 import Chatbot from "./pages/chatbot";
 import Login from "./pages/login";
 
-export function getUser(): { name: string; userId: number } | null {
+export function getUser(): { name: string; userId: number; email: string } | null {
   const raw = localStorage.getItem("library_user");
   return raw ? JSON.parse(raw) : null;
 }

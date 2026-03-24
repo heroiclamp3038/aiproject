@@ -8,6 +8,7 @@ function BookDetails() {
   const user = getUser();
   const [book, setBook] = useState<any>(null);
   const [userId] = useState(user?.userId?.toString() ?? "");
+  const userEmail = user?.email ?? "";
   const [message, setMessage] = useState<string | null>(null);
   const [messageOk, setMessageOk] = useState(true);
 
@@ -27,7 +28,7 @@ function BookDetails() {
 
   async function handleHold() {
     if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
-    const data = await holdBook(Number(id), Number(userId));
+    const data = await holdBook(Number(id), Number(userId), userEmail);
     if (data.success) {
       showMsg(`Hold placed! Expires: ${new Date(data.hold_until).toLocaleDateString()}`, true);
       updateBookStatus("on_hold");
@@ -38,7 +39,7 @@ function BookDetails() {
 
   async function handleCheckout() {
     if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
-    const data = await checkoutBook(Number(id), Number(userId));
+    const data = await checkoutBook(Number(id), Number(userId), userEmail);
     if (data.success) {
       showMsg(`Checked out! Due: ${new Date(data.due_date).toLocaleDateString()}`, true);
       updateBookStatus("checked_out");
@@ -49,7 +50,7 @@ function BookDetails() {
 
   async function handleReturn() {
     if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
-    const data = await returnBook(Number(id), Number(userId));
+    const data = await returnBook(Number(id), Number(userId), userEmail);
     if (data.success) {
       showMsg("Book returned successfully!", true);
       updateBookStatus("Available");
@@ -60,7 +61,7 @@ function BookDetails() {
 
   async function handleCancelHold() {
     if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
-    const data = await cancelHold(Number(id), Number(userId));
+    const data = await cancelHold(Number(id), Number(userId), userEmail);
     if (data.success) {
       showMsg("Hold cancelled successfully!", true);
       updateBookStatus("Available");
