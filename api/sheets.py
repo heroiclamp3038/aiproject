@@ -152,9 +152,19 @@ def get_users_sheet():
 
 def create_user(name: str, email: str) -> dict:
     sheet = get_users_sheet()
+    headers = sheet.row_values(1)
     user_id = random.randint(100000, 999999)
     user_id_hash = ph.hash(str(user_id))
-    sheet.append_row([user_id_hash, name, email.lower(), datetime.utcnow().isoformat(), "", ""])
+    values = {
+        "user_id_hash": user_id_hash,
+        "name": name,
+        "email": email.lower(),
+        "created_at": datetime.utcnow().isoformat(),
+        "otp_hash": "",
+        "otp_expires": "",
+    }
+    row = [values.get(h, "") for h in headers]
+    sheet.append_row(row)
     return {"user_id": user_id, "name": name, "email": email.lower()}
 
 
