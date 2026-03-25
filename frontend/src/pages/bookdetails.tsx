@@ -11,11 +11,24 @@ function BookDetails() {
   const userEmail = user?.email ?? "";
   const [message, setMessage] = useState<string | null>(null);
   const [messageOk, setMessageOk] = useState(true);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBooks()
       .then((all: any[]) => setBook(all.find((b: any) => b.book_id == id)));
   }, [id]);
+
+  useEffect(() => {
+    if (!book?.title) return;
+    const q = encodeURIComponent(`${book.title} ${book.author || ""}`);
+    fetch(`https://openlibrary.org/search.json?q=${q}&limit=1&fields=cover_i`)
+      .then(r => r.json())
+      .then(data => {
+        const id = data.docs?.[0]?.cover_i;
+        if (id) setCoverUrl(`https://covers.openlibrary.org/b/id/${id}-L.jpg`);
+      })
+      .catch(() => {});
+  }, [book]);
 
   function showMsg(text: string, ok: boolean) {
     setMessage(text);
@@ -101,53 +114,49 @@ function BookDetails() {
           ← Back to Catalog
         </a>
 
-        <h1 className="text-3xl font-bold mb-4">{book.title}</h1>
-        <p className="mb-2 text-gray-300">Author: {book.author || "Unknown"}</p>
-        {book.category && <p className="mb-2 text-gray-300">Category: {book.category}</p>}
-        {book.language && <p className="mb-2 text-gray-300">Language: {book.language}</p>}
-        {book.shelf_location && <p className="mb-4 text-gray-300">Shelf: {book.shelf_location}</p>}
-
-        <p className="mb-6">
-          Status:{" "}
-          <span className={`inline-block px-2 py-1 rounded-full text-sm font-medium ${statusColor}`}>
-            {statusLabel}
-          </span>
-        </p>
+        <div className="flex gap-6 mb-6">
+          {coverUrl && (
+            <img
+              src={coverUrl}
+              alt={book.title}
+              className="w-36 h-52 object-cover rounded-lg shadow-lg flex-shrink-0"
+              onError={() => setCoverUrl(null)}
+            />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold mb-4">{book.title}</h1>
+            <p className="mb-2 text-gray-300">Author: {book.author || "Unknown"}</p>
+            {book.category && <p className="mb-2 text-gray-300">Category: {book.category}</p>}
+            {book.language && <p className="mb-2 text-gray-300">Language: {book.language}</p>}
+            {book.shelf_location && <p className="mb-4 text-gray-300">Shelf: {book.shelf_location}</p>}
+            <p className="mb-2">
+              Status:{" "}
+              <span className={`inline-block px-2 py-1 rounded-full text-sm font-medium ${statusColor}`}>
+                {statusLabel}
+              </span>
+            </p>
+          </div>
+        </div>
 
         {showActions && (
           <div className="space-y-3">
-
             {isAvailable && (
               <div className="flex gap-3">
-                <button
-                  onClick={handleHold}
-                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-semibold transition-colors"
-                >
+                <button onClick={handleHold} className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-semibold transition-colors">
                   Place Hold
                 </button>
-                <button
-                  onClick={handleCheckout}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition-colors"
-                >
+                <button onClick={handleCheckout} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition-colors">
                   Checkout
                 </button>
               </div>
             )}
-
             {isOnHold && (
-              <button
-                onClick={handleCancelHold}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition-colors"
-              >
+              <button onClick={handleCancelHold} className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition-colors">
                 Cancel Hold
               </button>
             )}
-
             {isCheckedOut && (
-              <button
-                onClick={handleReturn}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-semibold transition-colors"
-              >
+              <button onClick={handleReturn} className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-semibold transition-colors">
                 Return Book
               </button>
             )}

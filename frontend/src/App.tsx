@@ -22,7 +22,10 @@ function Navbar() {
 
   return (
     <nav className="bg-gray-900 px-8 py-4 flex justify-between items-center shadow-md border-b border-gray-800">
-      <a href="/" className="text-xl font-bold text-white">Fremont Khalsa School Library</a>
+      <a href="/" className="flex items-center gap-3 text-xl font-bold text-white">
+          <img src="/logo.png" alt="FKS Logo" className="h-9 w-9 rounded-full object-contain bg-gray-800" onError={e => (e.currentTarget.style.display = "none")} />
+          <span>Fremont Khalsa School Library</span>
+        </a>
       <div className="flex items-center gap-6">
         <a href="/" className="text-gray-300 hover:text-white text-sm">Catalog</a>
         <a href="/chat" className="text-gray-300 hover:text-white text-sm">Chatbot</a>

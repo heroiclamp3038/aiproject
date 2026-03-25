@@ -145,6 +145,7 @@ def get_users_sheet():
     headers = sheet.row_values(1)
     for col_name in USERS_HEADERS:
         if col_name not in headers:
+            sheet.add_cols(1)
             sheet.update_cell(1, len(headers) + 1, col_name)
             headers.append(col_name)
 
