@@ -39,6 +39,7 @@ CACHE_TTL = 60  # seconds
 def _ensure_book_columns(sheet):
     headers = sheet.row_values(1)
     if "holder_email" not in headers:
+        sheet.add_cols(1)
         sheet.update_cell(1, len(headers) + 1, "holder_email")
 
 
