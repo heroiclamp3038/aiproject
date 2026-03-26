@@ -38,9 +38,11 @@ CACHE_TTL = 60  # seconds
 
 def _ensure_book_columns(sheet):
     headers = sheet.row_values(1)
-    if "holder_email" not in headers:
-        sheet.add_cols(1)
-        sheet.update_cell(1, len(headers) + 1, "holder_email")
+    for col in ["holder_email", "cover_url"]:
+        if col not in headers:
+            sheet.add_cols(1)
+            sheet.update_cell(1, len(headers) + 1, col)
+            headers.append(col)
 
 
 def get_sheet():
@@ -77,6 +79,7 @@ def normalize(row):
         "holder_user_id": row.get("holder_user_id"),
         "holder_email": row.get("holder_email", ""),
         "hold_until": row.get("hold_until"),
+        "cover_url": row.get("cover_url", ""),
     }
 
 

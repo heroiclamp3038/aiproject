@@ -19,7 +19,9 @@ function BookDetails() {
   }, [id]);
 
   useEffect(() => {
-    if (!book?.title) return;
+    if (!book) return;
+    if (book.cover_url) { setCoverUrl(book.cover_url); return; }
+    if (!book.title) return;
     const q = encodeURIComponent(`${book.title} ${book.author || ""}`);
     fetch(`https://openlibrary.org/search.json?q=${q}&limit=1&fields=cover_i`)
       .then(r => r.json())
