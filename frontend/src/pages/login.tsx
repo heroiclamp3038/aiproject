@@ -124,7 +124,7 @@ function Login() {
             <p className="text-green-400 font-medium">Account created!</p>
             <p className="text-gray-300">Welcome, <span className="text-white font-semibold">{newUser.name}</span>!</p>
             <div className="bg-gray-900 rounded-xl p-4 border border-gray-700">
-              <p className="text-xs text-gray-400 mb-1">Your User ID</p>
+              <p className="text-sm font-semibold text-white mb-2">Your User ID</p>
               <p className="text-4xl font-bold text-blue-400 tracking-widest">{newUser.user_id}</p>
               <p className="text-xs text-gray-500 mt-2">Save this, you will need it every time you sign in. You can also recover it via email if you forget.</p>
             </div>
