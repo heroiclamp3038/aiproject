@@ -119,7 +119,6 @@ function BookDetails() {
             <p className="mb-2 text-gray-300">Author: {book.author || "Unknown"}</p>
             {book.category && <p className="mb-2 text-gray-300">Category: {book.category}</p>}
             {book.language && <p className="mb-2 text-gray-300">Language: {book.language}</p>}
-            {book.shelf_location && <p className="mb-4 text-gray-300">Shelf: {book.shelf_location}</p>}
             <p className="mb-2">
               Status:{" "}
               <span className={`inline-block px-2 py-1 rounded-full text-sm font-medium ${statusColor}`}>
