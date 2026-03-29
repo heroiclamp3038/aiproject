@@ -11,16 +11,16 @@ class handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length))
-            name = body.get("name", "").strip()
             email = body.get("email", "").strip().lower()
-            if not name or not email:
-                self._json(400, {"error": "Name and email are required"})
+            name = body.get("name", "").strip()
+            if not email:
+                self._json(400, {"error": "Email is required"})
                 return
-            # Always return success to avoid revealing whether the account exists
-            try:
-                request_otp(name, email)
-            except Exception:
-                pass
+            found = request_otp(email, name)
+            if not found:
+                # Email unknown and no name provided — tell frontend to ask for name
+                self._json(404, {"error": "new_user"})
+                return
             self._json(200, {"success": True})
         except Exception as e:
             self._json(500, {"error": str(e)})

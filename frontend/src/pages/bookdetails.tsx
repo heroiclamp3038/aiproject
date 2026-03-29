@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { fetchBooks, holdBook, checkoutBook, returnBook, cancelHold } from "../api";
+import { fetchBooks, holdBook, returnBook, cancelHold } from "../api";
 import { getUser } from "../App";
 
 function BookDetails() {
@@ -49,17 +49,6 @@ function BookDetails() {
       updateBookStatus("on_hold");
     } else {
       showMsg(data.error || "Could not place hold.", false);
-    }
-  }
-
-  async function handleCheckout() {
-    if (!userId.trim()) { showMsg("Please enter your user ID.", false); return; }
-    const data = await checkoutBook(Number(id), Number(userId), userEmail);
-    if (data.success) {
-      showMsg(`Checked out! Due: ${new Date(data.due_date).toLocaleDateString()}`, true);
-      updateBookStatus("checked_out");
-    } else {
-      showMsg(data.error || "Could not check out.", false);
     }
   }
 
@@ -143,14 +132,9 @@ function BookDetails() {
         {showActions && (
           <div className="space-y-3">
             {isAvailable && (
-              <div className="flex gap-3">
-                <button onClick={handleHold} className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-semibold transition-colors">
-                  Place Hold
-                </button>
-                <button onClick={handleCheckout} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition-colors">
-                  Checkout
-                </button>
-              </div>
+              <button onClick={handleHold} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition-colors">
+                Place Hold (7 days)
+              </button>
             )}
             {isOnHold && (
               <button onClick={handleCancelHold} className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition-colors">

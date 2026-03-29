@@ -132,7 +132,9 @@ def send_email(to: str, subject: str, body: str):
 
 # ── Users sheet ───────────────────────────────────────────────────────────────
 
-USERS_HEADERS = ["user_id_hash", "name", "email", "created_at", "otp_hash", "otp_expires"]
+USERS_HEADERS = ["user_id_hash", "name", "email", "created_at", "otp_hash", "otp_expires", "user_id"]
+
+_VALID_HEADER_INDICATORS = {"user_id_hash", "name", "email", "user_id"}
 
 
 def get_users_sheet():
@@ -140,12 +142,17 @@ def get_users_sheet():
     try:
         sheet = spreadsheet.worksheet("Users")
     except WorksheetNotFound:
-        sheet = spreadsheet.add_worksheet(title="Users", rows=1000, cols=7)
+        sheet = spreadsheet.add_worksheet(title="Users", rows=1000, cols=8)
         sheet.append_row(USERS_HEADERS)
         return sheet
 
-    # Ensure all required columns exist (handles migration from old schema)
     headers = sheet.row_values(1)
+    # If no valid header row, insert one (handles sheets created without headers)
+    if not headers or not any(h in _VALID_HEADER_INDICATORS for h in headers):
+        sheet.insert_row(USERS_HEADERS, 1)
+        return sheet
+
+    # Ensure all required columns exist (handles migration from old schema)
     for col_name in USERS_HEADERS:
         if col_name not in headers:
             sheet.add_cols(1)
@@ -162,6 +169,7 @@ def create_user(name: str, email: str) -> dict:
     user_id_hash = ph.hash(str(user_id))
     values = {
         "user_id_hash": user_id_hash,
+        "user_id": str(user_id),
         "name": name,
         "email": email.lower(),
         "created_at": datetime.utcnow().isoformat(),
@@ -193,53 +201,64 @@ def verify_user(user_id: int, name: str) -> dict | None:
     return None
 
 
-def _find_user_row(sheet, name: str, email: str):
-    """Returns (row_index, row_dict) for user matching name+email, or (None, None)."""
+def _find_user_by_email(sheet, email: str):
+    """Returns (row_index, row_dict) for user matching email, or (None, None).
+    Lazily assigns a plaintext user_id if one is missing."""
+    headers = sheet.row_values(1)
+    user_id_col = (headers.index("user_id") + 1) if "user_id" in headers else None
     for idx, user in enumerate(sheet.get_all_records(), start=2):
-        if (user.get("name", "").strip().lower() == name.strip().lower() and
-                user.get("email", "").strip().lower() == email.strip().lower()):
+        if user.get("email", "").strip().lower() == email.strip().lower():
+            if user_id_col and not str(user.get("user_id", "")).strip():
+                new_id = random.randint(100000, 999999)
+                sheet.update_cell(idx, user_id_col, str(new_id))
+                user["user_id"] = new_id
             return idx, user
     return None, None
 
 
-def request_otp(name: str, email: str) -> bool:
-    """Generate and email a recovery OTP. Returns True if user was found."""
+def request_otp(email: str, name: str = "") -> bool:
+    """Send a login OTP to email. Auto-creates account if not found and name is given.
+    Returns True on success, False if email unknown and no name provided."""
     sheet = get_users_sheet()
     headers = sheet.row_values(1)
-    idx, user = _find_user_row(sheet, name, email)
+    idx, user = _find_user_by_email(sheet, email)
+
     if idx is None:
-        return False
+        if not name:
+            return False
+        create_user(name, email)
+        idx, user = _find_user_by_email(sheet, email)
+        if idx is None:
+            return False
 
     otp = str(random.randint(100000, 999999))
     otp_hash = ph.hash(otp)
     otp_expires = (datetime.utcnow() + timedelta(minutes=15)).isoformat()
 
-    otp_hash_col = headers.index("otp_hash") + 1
-    otp_expires_col = headers.index("otp_expires") + 1
-    sheet.update_cell(idx, otp_hash_col, otp_hash)
-    sheet.update_cell(idx, otp_expires_col, otp_expires)
+    sheet.update_cell(idx, headers.index("otp_hash") + 1, otp_hash)
+    sheet.update_cell(idx, headers.index("otp_expires") + 1, otp_expires)
 
+    display_name = user.get("name") or name or email.split("@")[0]
     send_email(
         to=email,
-        subject="Your FKS Library Recovery Code",
+        subject="Your FKS Library Sign-In Code",
         body=(
-            f"Hi {name},\n\n"
-            f"Your one-time recovery code is:\n\n"
+            f"Hi {display_name},\n\n"
+            f"Your sign-in code is:\n\n"
             f"    {otp}\n\n"
             f"This code expires in 15 minutes. "
             f"Do not share it with anyone.\n\n"
-            f"If you did not request this, you can safely ignore this email.\n\n"
             f"— Fremont Khalsa School Library"
         )
     )
     return True
 
 
-def verify_otp(name: str, email: str, otp: str) -> dict | None:
-    """Verify OTP, generate a new user_id. Returns user dict or None on failure."""
+def verify_otp(email: str, otp: str) -> dict | None:
+    """Verify OTP by email. Returns stable user dict or None on failure."""
     sheet = get_users_sheet()
     headers = sheet.row_values(1)
-    idx, user = _find_user_row(sheet, name, email)
+    idx, user = _find_user_by_email(sheet, email)
     if idx is None:
         return None
 
@@ -261,12 +280,15 @@ def verify_otp(name: str, email: str, otp: str) -> dict | None:
     except (VerifyMismatchError, VerificationError, InvalidHashError):
         return None
 
-    # Issue a new user_id and update the hash; clear the OTP
-    new_user_id = random.randint(100000, 999999)
-    new_hash = ph.hash(str(new_user_id))
-
-    sheet.update_cell(idx, headers.index("user_id_hash") + 1, new_hash)
+    # Clear OTP
     sheet.update_cell(idx, headers.index("otp_hash") + 1, "")
     sheet.update_cell(idx, headers.index("otp_expires") + 1, "")
 
-    return {"user_id": new_user_id, "name": user.get("name"), "email": email}
+    # Return stable user_id (plaintext column)
+    user_id = user.get("user_id")
+    if not user_id:
+        user_id = random.randint(100000, 999999)
+        if "user_id" in headers:
+            sheet.update_cell(idx, headers.index("user_id") + 1, str(user_id))
+
+    return {"user_id": int(str(user_id)), "name": user.get("name"), "email": email}

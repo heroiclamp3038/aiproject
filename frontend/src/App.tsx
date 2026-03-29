@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import BookList from "./booklist";
 import BookDetails from "./pages/bookdetails";
-import Chatbot from "./pages/chatbot";
 import Login from "./pages/login";
+import ChatWidget from "./components/ChatWidget";
 
 export function getUser(): { name: string; userId: number; email: string } | null {
   const raw = localStorage.getItem("library_user");
@@ -23,16 +23,22 @@ function Navbar() {
   return (
     <nav className="bg-gray-900 px-8 py-4 flex justify-between items-center shadow-md border-b border-gray-800">
       <a href="/" className="flex items-center gap-3 text-xl font-bold text-white">
-          <img src="/logo.png" alt="FKS Logo" className="h-9 w-9 rounded-full object-contain bg-gray-800" onError={e => (e.currentTarget.style.display = "none")} />
-          <span>Fremont Khalsa School Library</span>
-        </a>
+        <img
+          src="/logo.png"
+          alt="FKS Logo"
+          className="h-9 w-9 rounded-full object-contain bg-gray-800"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+        <span>Fremont Khalsa School Library</span>
+      </a>
       <div className="flex items-center gap-6">
-        <a href="/" className="text-gray-300 hover:text-white text-sm">Catalog</a>
-        <a href="/chat" className="text-gray-300 hover:text-white text-sm">Chatbot</a>
+        <a href="/" className="text-gray-300 hover:text-white text-sm">
+          Catalog
+        </a>
         <div className="flex items-center gap-3 border-l border-gray-700 pl-6">
           <div className="text-right">
             <p className="text-white text-sm font-medium">{user.name}</p>
-            <p className="text-gray-500 text-xs">ID: {user.userId}</p>
+            <p className="text-gray-500 text-xs">{user.email}</p>
           </div>
           <button
             onClick={signOut}
@@ -51,6 +57,8 @@ function Protected({ element }: { element: React.ReactElement }) {
 }
 
 function App() {
+  const user = getUser();
+
   return (
     <>
       <Navbar />
@@ -58,8 +66,8 @@ function App() {
         <Route path="/login" element={getUser() ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/" element={<Protected element={<BookList />} />} />
         <Route path="/book/:id" element={<Protected element={<BookDetails />} />} />
-        <Route path="/chat" element={<Protected element={<Chatbot />} />} />
       </Routes>
+      {user && <ChatWidget />}
     </>
   );
 }

@@ -25,7 +25,7 @@ class handler(BaseHTTPRequestHandler):
                 self._json(400, {"error": "Book not available"})
                 return
 
-            hold_until = (datetime.now() + timedelta(days=2)).isoformat()
+            hold_until = (datetime.now() + timedelta(days=7)).isoformat()
             update_book(book_id, {
                 "status": "on_hold",
                 "holder_user_id": user_id,
