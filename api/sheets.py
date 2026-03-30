@@ -16,7 +16,7 @@ SHEET_NAME = "AI Project"
 
 def _hash_secret(secret: str) -> str:
     salt = os.urandom(16)
-    key = hashlib.scrypt(secret.encode(), salt=salt, n=16384, r=8, p=1, dklen=32)
+    key = hashlib.pbkdf2_hmac("sha256", secret.encode(), salt, 200000, dklen=32)
     return base64.b64encode(salt).decode() + ":" + base64.b64encode(key).decode()
 
 
@@ -25,7 +25,7 @@ def _verify_secret(stored: str, secret: str) -> bool:
         salt_b64, key_b64 = stored.split(":")
         salt = base64.b64decode(salt_b64)
         expected = base64.b64decode(key_b64)
-        derived = hashlib.scrypt(secret.encode(), salt=salt, n=16384, r=8, p=1, dklen=32)
+        derived = hashlib.pbkdf2_hmac("sha256", secret.encode(), salt, 200000, dklen=32)
         return derived == expected
     except Exception:
         return False
@@ -245,7 +245,7 @@ def request_otp(email: str, name: str = "") -> bool:
 
     otp = str(random.randint(100000, 999999))
     otp_hash = _hash_secret(otp)
-    otp_expires = (datetime.utcnow() + timedelta(minutes=15)).isoformat()
+    otp_expires = int((datetime.utcnow() + timedelta(minutes=15)).timestamp())
 
     sheet.update_cell(idx, headers.index("otp_hash") + 1, otp_hash)
     sheet.update_cell(idx, headers.index("otp_expires") + 1, otp_expires)
@@ -281,10 +281,9 @@ def verify_otp(email: str, otp: str) -> dict | None:
         return None
 
     try:
-        expires = datetime.fromisoformat(otp_expires_str)
-        if datetime.utcnow() > expires:
+        if time.time() > float(otp_expires_str):
             return None
-    except ValueError:
+    except (ValueError, TypeError):
         return None
 
     if not _verify_secret(stored_otp_hash, otp):
