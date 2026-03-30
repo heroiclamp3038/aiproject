@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import json
 import os
 import random
@@ -8,12 +10,25 @@ from email.mime.text import MIMEText
 import gspread
 from gspread.exceptions import APIError, WorksheetNotFound
 from oauth2client.service_account import ServiceAccountCredentials
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
 
 SHEET_NAME = "AI Project"
 
-ph = PasswordHasher(time_cost=1, memory_cost=65536, parallelism=2)
+
+def _hash_secret(secret: str) -> str:
+    salt = os.urandom(16)
+    key = hashlib.scrypt(secret.encode(), salt=salt, n=16384, r=8, p=1, dklen=32)
+    return base64.b64encode(salt).decode() + ":" + base64.b64encode(key).decode()
+
+
+def _verify_secret(stored: str, secret: str) -> bool:
+    try:
+        salt_b64, key_b64 = stored.split(":")
+        salt = base64.b64decode(salt_b64)
+        expected = base64.b64decode(key_b64)
+        derived = hashlib.scrypt(secret.encode(), salt=salt, n=16384, r=8, p=1, dklen=32)
+        return derived == expected
+    except Exception:
+        return False
 
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -166,7 +181,7 @@ def create_user(name: str, email: str) -> dict:
     sheet = get_users_sheet()
     headers = sheet.row_values(1)
     user_id = random.randint(100000, 999999)
-    user_id_hash = ph.hash(str(user_id))
+    user_id_hash = _hash_secret(str(user_id))
     values = {
         "user_id_hash": user_id_hash,
         "user_id": str(user_id),
@@ -189,15 +204,12 @@ def verify_user(user_id: int, name: str) -> dict | None:
         stored_hash = str(user.get("user_id_hash", "")).strip()
         if not stored_hash:
             continue
-        try:
-            ph.verify(stored_hash, str(user_id))
+        if _verify_secret(stored_hash, str(user_id)):
             return {
                 "user_id": user_id,
                 "name": user.get("name"),
                 "email": user.get("email", "")
             }
-        except (VerifyMismatchError, VerificationError, InvalidHashError):
-            pass
     return None
 
 
@@ -232,7 +244,7 @@ def request_otp(email: str, name: str = "") -> bool:
             return False
 
     otp = str(random.randint(100000, 999999))
-    otp_hash = ph.hash(otp)
+    otp_hash = _hash_secret(otp)
     otp_expires = (datetime.utcnow() + timedelta(minutes=15)).isoformat()
 
     sheet.update_cell(idx, headers.index("otp_hash") + 1, otp_hash)
@@ -275,9 +287,7 @@ def verify_otp(email: str, otp: str) -> dict | None:
     except ValueError:
         return None
 
-    try:
-        ph.verify(stored_otp_hash, otp)
-    except (VerifyMismatchError, VerificationError, InvalidHashError):
+    if not _verify_secret(stored_otp_hash, otp):
         return None
 
     # Clear OTP
