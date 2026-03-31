@@ -21,6 +21,9 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["education", "books"],
+  "categories": [
+    "education",
+    "books"
+  ],
   "lang": "en-US"
 }
