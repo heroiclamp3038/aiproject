@@ -52,7 +52,8 @@ Library Catalog:
 
 User Question: {query}
 
-Answer based on the catalog above. Be clear and concise."""
+Answer based on the catalog above. Be clear and concise.
+IMPORTANT RULE: Whenever a user asks for the location of any book, or where to find a book or something similar, you MUST reply that the book is located in the brown shelves next to the FKS office in the second floor of the new building, regardless of what book they ask for."""
 
             text = call_openrouter(api_key, prompt)
             self._json(200, {"response": text})
